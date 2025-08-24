@@ -26,6 +26,7 @@ import CursorLogo from './CursorLogo.jsx';
 import ClaudeStatus from './ClaudeStatus';
 import { MicButton } from './MicButton.jsx';
 import { api, authenticatedFetch } from '../utils/api';
+import SubagentsPopup from './SubagentsPopup';
 
 
 // Format "Claude AI usage limit reached|<epoch>" into a local time string
@@ -1206,6 +1207,8 @@ function ChatInterface({ selectedProject, selectedSession, ws, sendMessage, mess
   const [atSymbolPosition, setAtSymbolPosition] = useState(-1);
   const [canAbortSession, setCanAbortSession] = useState(false);
   const [isUserScrolledUp, setIsUserScrolledUp] = useState(false);
+  const [showSubagentsPopup, setShowSubagentsPopup] = useState(false);
+  const subagentsButtonRef = useRef(null);
   const scrollPositionRef = useRef({ height: 0, top: 0 });
   const [showCommandMenu, setShowCommandMenu] = useState(false);
   const [slashCommands, setSlashCommands] = useState([]);
@@ -2955,6 +2958,29 @@ function ChatInterface({ selectedProject, selectedSession, ws, sendMessage, mess
     setPermissionMode(modes[nextIndex]);
   };
 
+  const handleAgentSelect = (agent) => {
+    // Insert agent name at current cursor position or append to input
+    const currentInput = textareaRef.current?.value || input;
+    const agentText = `@${agent.name} `;
+    
+    if (textareaRef.current) {
+      const cursorPos = textareaRef.current.selectionStart || currentInput.length;
+      const newInput = currentInput.slice(0, cursorPos) + agentText + currentInput.slice(cursorPos);
+      setInput(newInput);
+      
+      // Focus textarea and set cursor position after the agent name
+      setTimeout(() => {
+        if (textareaRef.current) {
+          textareaRef.current.focus();
+          const newCursorPos = cursorPos + agentText.length;
+          textareaRef.current.setSelectionRange(newCursorPos, newCursorPos);
+        }
+      }, 0);
+    } else {
+      setInput(prev => prev + agentText);
+    }
+  };
+
   // Don't render if no project is selected
   if (!selectedProject) {
     return (
@@ -3342,7 +3368,7 @@ function ChatInterface({ selectedProject, selectedSession, ws, sendMessage, mess
               placeholder="Ask Claude to help with your code... (@ to reference files)"
               disabled={isLoading}
               rows={1}
-              className="chat-input-placeholder w-full pl-12 pr-28 sm:pr-40 py-3 sm:py-4 bg-transparent rounded-2xl focus:outline-none text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 disabled:opacity-50 resize-none min-h-[40px] sm:min-h-[56px] max-h-[40vh] sm:max-h-[300px] overflow-y-auto text-sm sm:text-base transition-all duration-200"
+              className="chat-input-placeholder w-full pl-20 pr-28 sm:pr-40 py-3 sm:py-4 bg-transparent rounded-2xl focus:outline-none text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 disabled:opacity-50 resize-none min-h-[40px] sm:min-h-[56px] max-h-[40vh] sm:max-h-[300px] overflow-y-auto text-sm sm:text-base transition-all duration-200"
               style={{ height: 'auto' }}
             />
             {/* Clear button - shown when there's text */}
@@ -3399,6 +3425,19 @@ function ChatInterface({ selectedProject, selectedSession, ws, sendMessage, mess
               </svg>
             </button>
             
+            {/* Subagents button */}
+            <button
+              ref={subagentsButtonRef}
+              type="button"
+              onClick={() => setShowSubagentsPopup(true)}
+              className="absolute left-12 bottom-4 p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+              title="Select subagent"
+            >
+              <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+              </svg>
+            </button>
+            
             {/* Mic button - HIDDEN */}
             <div className="absolute right-16 sm:right-16 top-1/2 transform -translate-y-1/2" style={{ display: 'none' }}>
               <MicButton 
@@ -3450,6 +3489,14 @@ function ChatInterface({ selectedProject, selectedSession, ws, sendMessage, mess
           </div>
         </form>
       </div>
+      
+      {/* Subagents Popup */}
+      <SubagentsPopup
+        isOpen={showSubagentsPopup}
+        onClose={() => setShowSubagentsPopup(false)}
+        onSelectAgent={handleAgentSelect}
+        buttonRef={subagentsButtonRef}
+      />
     </div>
     </>
   );

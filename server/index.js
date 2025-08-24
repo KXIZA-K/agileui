@@ -43,6 +43,7 @@ import gitRoutes from './routes/git.js';
 import authRoutes from './routes/auth.js';
 import mcpRoutes from './routes/mcp.js';
 import cursorRoutes from './routes/cursor.js';
+import agentsRoutes from './routes/agents.js';
 import { initializeDatabase } from './database/db.js';
 import { validateApiKey, authenticateToken, authenticateWebSocket } from './middleware/auth.js';
 
@@ -179,6 +180,9 @@ app.use('/api/mcp', authenticateToken, mcpRoutes);
 
 // Cursor API Routes (protected)
 app.use('/api/cursor', authenticateToken, cursorRoutes);
+
+// Agents API Routes (protected)
+app.use('/api/agents', authenticateToken, agentsRoutes);
 
 // Static files served after API routes
 app.use(express.static(path.join(__dirname, '../dist')));
